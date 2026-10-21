@@ -51,6 +51,12 @@ const SPECIES = [
   { slug: "peepal", name: "Peepal", scientific_name: "Ficus religiosa", emoji: "🌳", planting_cost: 780, verification_fee: 100, planter_payout: 680, suitable_regions: ["madurai", "jaipur", "delhi", "mysore", "pune", "kerala"] },
   { slug: "sheesham", name: "Indian Rosewood (Sheesham)", scientific_name: "Dalbergia sissoo", emoji: "🌲", planting_cost: 820, verification_fee: 100, planter_payout: 720, suitable_regions: ["delhi", "jaipur", "nagpur", "pune", "bangalore"] },
   { slug: "golden-shower", name: "Golden Shower (Amaltas)", scientific_name: "Cassia fistula", emoji: "🌼", planting_cost: 760, verification_fee: 100, planter_payout: 660, suitable_regions: ["madurai", "coimbatore", "ahmedabad", "jaipur", "kerala"] },
+  { slug: "amla", name: "Amla (Indian Gooseberry)", scientific_name: "Phyllanthus emblica", emoji: "🫐", planting_cost: 700, verification_fee: 100, planter_payout: 600, suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "delhi", "jaipur", "pune", "nagpur"] },
+  { slug: "jamun", name: "Jamun (Java Plum)", scientific_name: "Syzygium cumini", emoji: "🍇", planting_cost: 880, verification_fee: 100, planter_payout: 780, suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "pune", "nagpur"] },
+  { slug: "arjun", name: "Arjun", scientific_name: "Terminalia arjuna", emoji: "🌳", planting_cost: 840, verification_fee: 100, planter_payout: 740, suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "delhi", "nagpur"] },
+  { slug: "gulmohar", name: "Gulmohar", scientific_name: "Delonix regia", emoji: "🌺", planting_cost: 820, verification_fee: 100, planter_payout: 720, suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "pune", "ahmedabad"] },
+  { slug: "tamarind", name: "Tamarind", scientific_name: "Tamarindus indica", emoji: "🪴", planting_cost: 800, verification_fee: 100, planter_payout: 700, suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "delhi", "jaipur", "pune", "nagpur", "ahmedabad"] },
+  { slug: "ashoka", name: "Ashoka", scientific_name: "Saraca asoca", emoji: "🌼", planting_cost: 780, verification_fee: 100, planter_payout: 680, suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "pune"] },
 ];
 const IMAGES = {
   neem: "https://images.pexels.com/photos/5060587/pexels-photo-5060587.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -59,6 +65,12 @@ const IMAGES = {
   peepal: "https://images.pexels.com/photos/38416538/pexels-photo-38416538.jpeg?auto=compress&cs=tinysrgb&w=1200",
   sheesham: "https://images.pexels.com/photos/20810259/pexels-photo-20810259.jpeg?auto=compress&cs=tinysrgb&w=1200",
   cassia: "https://images.pexels.com/photos/31242850/pexels-photo-31242850.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  amla: "https://images.pexels.com/photos/6605582/pexels-photo-6605582.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  jamun: "https://images.pexels.com/photos/10809224/pexels-photo-10809224.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  arjun: "https://images.pexels.com/photos/1179229/pexels-photo-1179229.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  gulmohar: "https://images.pexels.com/photos/1509194/pexels-photo-1509194.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  tamarind: "https://images.pexels.com/photos/2246384/pexels-photo-2246384.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  ashoka: "https://images.pexels.com/photos/15383007/pexels-photo-15383007.jpeg?auto=compress&cs=tinysrgb&w=1200",
 };
 
 function ok(marker, msg) {
@@ -120,8 +132,9 @@ async function seed() {
 
   console.log("\n2. Species catalog");
   for (const s of SPECIES) {
+    const imgKey = s.slug === "golden-shower" ? "cassia" : s.slug;
     const { error } = await supabase.from("tree_species").upsert(
-      { ...s, description: s.name + " — native and region-appropriate.", image_url: IMAGES[s.slug === "golden-shower" ? "cassia" : s.slug], native_to: "India", care_notes: "Water young trees weekly in the first season.", availability: true },
+      { ...s, description: s.name + " — native and region-appropriate.", image_url: IMAGES[imgKey] ?? s.image_url, native_to: s.native_to ?? "India", care_notes: s.care_notes ?? "Water young trees weekly in the first season.", availability: true },
       { onConflict: "slug" }
     );
     if (error) return fail("species", s.slug + " → " + error.message);

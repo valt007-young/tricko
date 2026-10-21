@@ -121,6 +121,120 @@ export const SPECIES_CATALOG: Species[] = [
     emoji: "🌼",
     native_to: "Indian subcontinent",
   },
+  {
+    id: 7,
+    slug: "amla",
+    name: "Amla (Indian Gooseberry)",
+    scientific_name: "Phyllanthus emblica",
+    description:
+      "A small, sacred fruit tree prized for vitamin-C-rich berries. Hardy, drought tolerant and long-lived — well suited to farm edges and community plots.",
+    image_url:
+      "https://images.pexels.com/photos/6605582/pexels-photo-6605582.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "delhi", "jaipur", "pune", "nagpur"],
+    care_notes:
+      "Prefers full sun and well-drained soil. Water young trees weekly; established trees are drought tolerant.",
+    planting_cost: 700,
+    verification_fee: 100,
+    planter_payout: 600,
+    availability: true,
+    emoji: "🫐",
+    native_to: "Indian subcontinent",
+  },
+  {
+    id: 8,
+    slug: "jamun",
+    name: "Jamun (Java Plum)",
+    scientific_name: "Syzygium cumini",
+    description:
+      "A majestic fruit and shade tree with dense evergreen canopy. Thrives in tropical and subtropical plains, providing both food and bird habitat.",
+    image_url:
+      "https://images.pexels.com/photos/10809224/pexels-photo-10809224.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "pune", "nagpur"],
+    care_notes:
+      "Likes moisture while young. Give it room — the canopy spreads wide. Prune only to remove dead wood.",
+    planting_cost: 880,
+    verification_fee: 100,
+    planter_payout: 780,
+    availability: true,
+    emoji: "🍇",
+    native_to: "Indian subcontinent",
+  },
+  {
+    id: 9,
+    slug: "arjun",
+    name: "Arjun",
+    scientific_name: "Terminalia arjuna",
+    description:
+      "A stately riverside tree with medicinal bark. Its deep roots stabilise banks and its broad canopy provides generous shade.",
+    image_url:
+      "https://images.pexels.com/photos/1179229/pexels-photo-1179229.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "delhi", "nagpur"],
+    care_notes:
+      "Thrives near water. Water regularly in the first two seasons, then rarely. Needs open ground.",
+    planting_cost: 840,
+    verification_fee: 100,
+    planter_payout: 740,
+    availability: true,
+    emoji: "🌳",
+    native_to: "Indian subcontinent",
+  },
+  {
+    id: 10,
+    slug: "gulmohar",
+    name: "Gulmohar",
+    scientific_name: "Delonix regia",
+    description:
+      "A show-stopping flowering tree that erupts in scarlet each summer. Fast growing and a favourite for avenues and open spaces.",
+    image_url:
+      "https://images.pexels.com/photos/1509194/pexels-photo-1509194.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "pune", "ahmedabad"],
+    care_notes:
+      "Full sun and well-drained soil. Water young trees weekly. Prune to shape a broad, spreading crown.",
+    planting_cost: 820,
+    verification_fee: 100,
+    planter_payout: 720,
+    availability: true,
+    emoji: "🌺",
+    native_to: "Madagascar (naturalised in India)",
+  },
+  {
+    id: 11,
+    slug: "tamarind",
+    name: "Tamarind",
+    scientific_name: "Tamarindus indica",
+    description:
+      "A long-lived, drought-hardy tree valued for its tangy pods and deep shade. Common along roads, farms and village commons across India.",
+    image_url:
+      "https://images.pexels.com/photos/2246384/pexels-photo-2246384.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "delhi", "jaipur", "pune", "nagpur", "ahmedabad"],
+    care_notes:
+      "Very drought tolerant once established. Water young trees weekly in the first dry season. Give it space.",
+    planting_cost: 800,
+    verification_fee: 100,
+    planter_payout: 700,
+    availability: true,
+    emoji: "🪴",
+    native_to: "Tropical Africa (naturalised in India)",
+  },
+  {
+    id: 12,
+    slug: "ashoka",
+    name: "Ashoka",
+    scientific_name: "Saraca asoca",
+    description:
+      "A graceful native tree with vivid orange-red blooms and cultural significance. A beautiful choice for gardens and community spaces.",
+    image_url:
+      "https://images.pexels.com/photos/15383007/pexels-photo-15383007.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "pune"],
+    care_notes:
+      "Prefers partial shade and moist, well-drained soil while young. Water regularly; protect from harsh afternoon sun early on.",
+    planting_cost: 780,
+    verification_fee: 100,
+    planter_payout: 680,
+    availability: true,
+    emoji: "🌼",
+    native_to: "Indian subcontinent",
+  },
 ];
 
 export function speciesBySlug(slug: string): Species | undefined {
