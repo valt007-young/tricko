@@ -17,7 +17,6 @@ export function AcceptMissionButton({
   const [error, setError] = useState<string | null>(null);
 
   const isPlanter = profile?.role === "planter";
-  const verified = Boolean(profile?.planter_verified);
 
   async function accept() {
     setBusy(true);
@@ -70,14 +69,6 @@ export function AcceptMissionButton({
         >
           Sign up as a planter to accept
         </Button>
-      ) : !verified ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Planter verification pending. You can accept demo missions while you complete
-          your profile.
-          <Button size="sm" className="mt-3 w-full" disabled={busy} loading={busy} onClick={accept}>
-            Accept anyway (demo)
-          </Button>
-        </div>
       ) : (
         <Button className="w-full" size="lg" disabled={busy} loading={busy} onClick={accept}>
           {busy ? "Accepting…" : "🟢 Accept Mission"}

@@ -2,7 +2,12 @@ export const APP_NAME = "TRIKO";
 export const APP_TAGLINE = "Don't just plant a tree. Grow a forest.";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export const DEMO_MODE = true;
+/**
+ * Demo mode — planting completes instantly with a simulated payment, no
+ * Cashfree keys required. On by default; set NEXT_PUBLIC_DEMO_MODE=false
+ * (and add Cashfree keys) to take real payments.
+ */
+export const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE !== "false";
 
 export const TREE_STATUSES = [
   "funded",
@@ -111,6 +116,7 @@ export interface ImpactStats {
   currently_growing: number;
   active_planters: number;
   locations: number;
+  trees_this_month: number;
 }
 
 export const DEFAULT_IMPACT: ImpactStats = {
@@ -118,13 +124,15 @@ export const DEFAULT_IMPACT: ImpactStats = {
   currently_growing: 10841,
   active_planters: 842,
   locations: 37,
+  trees_this_month: 0,
 };
 
 /* ------------------------------------------------------------------ */
-/*  Community challenge (demo)                                         */
+/*  Community challenge (goal is static; current count comes from DB)  */
 /* ------------------------------------------------------------------ */
 
-export const AUGUST_CHALLENGE = { goal: 10000, current: 7842, label: "August Challenge" };
+export const MONTHLY_CHALLENGE_GOAL = 10000;
+export const MONTHLY_CHALLENGE_LABEL = "This month's community challenge";
 
 export const MONTHLY_GOAL_TREES = 3;
 

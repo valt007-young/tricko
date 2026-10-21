@@ -5,7 +5,12 @@ import { getServerSession } from "@/lib/session";
 
 export const metadata: Metadata = { title: "Profile" };
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string; from?: string }>;
+}) {
+  const { role, from } = await searchParams;
   const session = await getServerSession();
   if (!session.user) redirect("/login?next=%2Faccount");
   if (!session.profile) notFound();
@@ -17,7 +22,11 @@ export default async function AccountPage() {
         </p>
         <h1 className="mt-2 font-display text-4xl font-bold text-forest-950">👤 Profile</h1>
         <div className="mt-8">
-          <AccountForm initial={session.profile} />
+          <AccountForm
+            initial={session.profile}
+            planterHint={role === "planter"}
+            returnTo={typeof from === "string" ? from : undefined}
+          />
         </div>
       </div>
     </section>

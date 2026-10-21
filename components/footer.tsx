@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "./logo";
+import { DEMO_MODE } from "@/lib/constants";
 
 const footerLinks = [
   { label: "Explore trees", href: "/explore" },
@@ -44,8 +45,10 @@ export function Footer() {
           </h3>
           <p className="mt-4 text-sm leading-relaxed text-cream-200/70">
             A tree is only marked as planted after proof is submitted and reviewed. Tree
-            IDs are permanent and never reused. Payments shown in this MVP are demo
-            transactions.
+            IDs are permanent and never reused.{" "}
+            {DEMO_MODE
+              ? "Payments in this demo are simulated — no money changes hands."
+              : "Payments are processed securely via Cashfree."}
           </p>
         </div>
       </div>

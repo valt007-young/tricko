@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Card, Badge } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/ui";
+import { StatCard } from "@/components/stat-card";
 import { getServerSession, requirePlanter, regionLabel } from "@/lib/session";
 import { formatINR, formatDate } from "@/lib/utils";
 
@@ -26,15 +27,14 @@ export default async function WorkPage() {
           💰 My planting work
         </h1>
         <p className="mt-3 max-w-xl text-forest-900/60">
-          Payouts become eligible only after a tree is verified. Demo mode — no real money
-          is transferred.
+          Payouts become eligible only after a tree is verified.
         </p>
 
         <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <Stat label="Completed missions" value={String(missions.length)} emoji="✅" />
-          <Stat label="Verified trees" value={String(verified.length)} emoji="🌳" />
-          <Stat label="Pending verification" value={String(pending.length)} emoji="🟣" />
-          <Stat label="Eligible earnings" value={formatINR(eligible)} emoji="💰" highlight />
+          <StatCard label="Completed missions" value={String(missions.length)} emoji="✅" />
+          <StatCard label="Verified trees" value={String(verified.length)} emoji="🌳" />
+          <StatCard label="Pending verification" value={String(pending.length)} emoji="🟣" />
+          <StatCard label="Eligible earnings" value={formatINR(eligible)} emoji="💰" highlight />
         </div>
 
         <Card className="mt-8 p-6">
@@ -90,20 +90,6 @@ export default async function WorkPage() {
         </p>
       </div>
     </section>
-  );
-}
-
-function Stat({ label, value, emoji, highlight }: { label: string; value: string; emoji: string; highlight?: boolean }) {
-  return (
-    <div className={`rounded-3xl border px-5 py-6 text-center shadow-soft ${highlight ? "border-forest-600 bg-forest-700 text-cream-50" : "border-forest-900/10 bg-cream-50"}`}>
-      <div className="text-2xl" aria-hidden>
-        {emoji}
-      </div>
-      <div className="mt-1.5 font-display text-2xl font-bold">{value}</div>
-      <div className={`mt-0.5 text-[11px] font-medium uppercase tracking-wide ${highlight ? "text-cream-200/70" : "text-forest-900/45"}`}>
-        {label}
-      </div>
-    </div>
   );
 }
 

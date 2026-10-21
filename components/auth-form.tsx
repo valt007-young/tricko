@@ -94,14 +94,9 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
           return;
         }
 
-        const userId = data.user?.id;
-        if (userId) {
-          // Ensure a profile exists (trigger also does this — this is a safety net).
-          await supabase.from("profiles").upsert(
-            { id: userId, full_name: fullName.trim(), role },
-            { onConflict: "id" }
-          );
-        }
+        // Profile row is created by the DB trigger `handle_new_user` (from the
+        // role metadata above) — no client-side upsert needed, and it would be
+        // blocked by the role-lock column grants anyway.
 
         if (data.session) {
           router.replace(next);
@@ -238,13 +233,6 @@ function AuthFormInner({ mode }: { mode: "login" | "signup" }) {
             </>
           )}
         </p>
-
-        {mode === "signup" && (
-          <p className="mt-4 text-center text-[11px] text-forest-900/40">
-            Demo users: sponsor@triko.com / planter@triko.com / admin@triko.com — password{" "}
-            <code>demo1234</code>
-          </p>
-        )}
       </div>
     </div>
   );

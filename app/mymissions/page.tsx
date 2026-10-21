@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
 import { StatusBadge } from "@/components/status-badge";
+import { StatCard } from "@/components/stat-card";
 import { getServerSession, requirePlanter, regionLabel } from "@/lib/session";
 import { formatINR, formatDate } from "@/lib/utils";
 
@@ -13,6 +14,15 @@ export default async function MyMissionsPage() {
   requirePlanter(session, "/mymissions");
 
   const missions = await fetchMyMissions(session.profile!.id);
+
+  const active = missions.filter(
+    (m) => m.status === "accepted" || m.status === "planting"
+  );
+  const awaitingProof = missions.filter(
+    (m) => m.status === "awaiting_verification" || m.status === "needs_review"
+  );
+  const verified = missions.filter((m) => m.status === "verified");
+  const earnings = verified.reduce((sum, m) => sum + Number(m.payout), 0);
 
   return (
     <section className="bg-cream-gradient min-h-screen py-16">
@@ -26,6 +36,13 @@ export default async function MyMissionsPage() {
         <p className="mt-3 max-w-xl text-forest-900/60">
           Missions you&apos;ve accepted. Plant, submit proof, and get paid after verification.
         </p>
+
+        <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard label="Active missions" value={String(active.length)} emoji="🧰" />
+          <StatCard label="Awaiting proof" value={String(awaitingProof.length)} emoji="🟣" />
+          <StatCard label="Trees verified" value={String(verified.length)} emoji="🌳" />
+          <StatCard label="Eligible earnings" value={formatINR(earnings)} emoji="💰" highlight />
+        </div>
 
         <div className="mt-10 space-y-4">
           {missions.length === 0 && (

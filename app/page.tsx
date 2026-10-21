@@ -8,13 +8,22 @@ import { HowItWorks } from "@/components/landing/how-it-works";
 import { Roles } from "@/components/landing/roles";
 import { Transparency } from "@/components/landing/transparency";
 import { getLiveStats, getSpeciesList } from "@/lib/server-data";
-import { AUGUST_CHALLENGE, APP_TAGLINE } from "@/lib/constants";
+import {
+  MONTHLY_CHALLENGE_GOAL,
+  MONTHLY_CHALLENGE_LABEL,
+  APP_TAGLINE,
+  DEMO_MODE,
+} from "@/lib/constants";
 import { formatINR } from "@/lib/utils";
 
 export default async function LandingPage() {
   const [species, stats] = await Promise.all([getSpeciesList(), getLiveStats()]);
   const preview = species.slice(0, 3);
-  const challengePct = Math.round((AUGUST_CHALLENGE.current / AUGUST_CHALLENGE.goal) * 100);
+  const challengeCurrent = stats?.trees_this_month ?? 0;
+  const challengePct = Math.min(
+    100,
+    Math.round((challengeCurrent / MONTHLY_CHALLENGE_GOAL) * 100)
+  );
 
   return (
     <>
@@ -57,8 +66,8 @@ export default async function LandingPage() {
                 </Link>
               </div>
               <p className="mt-6 text-sm text-cream-200/55">
-                Sponsor from {formatINR(species[0]?.planting_cost ?? 800)} · Demo payments ·
-                No unsupported carbon claims
+                Sponsor from {formatINR(species[0]?.planting_cost ?? 800)} ·{" "}
+                {DEMO_MODE ? "Free demo" : "Secure payments"} · No unsupported carbon claims
               </p>
             </Reveal>
           </div>
@@ -136,11 +145,11 @@ export default async function LandingPage() {
               Community challenge
             </p>
             <h2 className="mt-3 font-display text-3xl font-bold md:text-4xl">
-              {AUGUST_CHALLENGE.label}
+              {MONTHLY_CHALLENGE_LABEL}
             </h2>
             <p className="mt-3 text-cream-200/75">
-              Goal: {AUGUST_CHALLENGE.goal.toLocaleString("en-IN")} trees · Current:{" "}
-              {AUGUST_CHALLENGE.current.toLocaleString("en-IN")}
+              Goal: {MONTHLY_CHALLENGE_GOAL.toLocaleString("en-IN")} trees · Current:{" "}
+              {challengeCurrent.toLocaleString("en-IN")}
             </p>
             <div className="mt-6 overflow-hidden rounded-full bg-forest-900/70">
               <div

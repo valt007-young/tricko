@@ -6,7 +6,7 @@ import { supabaseConfigured, createClient } from "./supabase/server";
 
 /**
  * Server-side data access with graceful fallbacks so every screen
- * renders even before Supabase is configured (shows demo/static data).
+ * renders even before Supabase is configured (falls back to static data).
  */
 
 export async function getSpeciesList(): Promise<Species[]> {
@@ -37,8 +37,15 @@ export async function getLiveStats(): Promise<ImpactStats | null> {
     const { count: planters } = await supabase
       .from("profiles")
       .select("id", { count: "exact", head: true })
-      .eq("role", "planter")
-      .eq("planter_verified", true);
+      .eq("role", "planter");
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const { count: thisMonth } = await supabase
+      .from("trees")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", monthStart.toISOString())
+      .neq("status", "failed");
     const { data: regionRows } = await supabase.from("trees").select("region");
     const locations = new Set((regionRows ?? []).map((r) => r.region)).size;
     return {
@@ -46,6 +53,7 @@ export async function getLiveStats(): Promise<ImpactStats | null> {
       currently_growing: growing ?? 0,
       active_planters: planters ?? 0,
       locations: locations || REGIONS.length,
+      trees_this_month: thisMonth ?? 0,
     };
   } catch {
     return null;

@@ -1,20 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createClient, supabaseConfigured } from "@/lib/supabase/client";
+import { supabaseConfigured } from "@/lib/supabase/client";
 import { useSession } from "@/components/session-provider";
 import { Button, Card } from "@/components/ui";
-import { pricingBreakdown, REGIONS, regionById } from "@/lib/constants";
-import { plantTree } from "@/lib/client-service";
+import { pricingBreakdown, REGIONS, regionById, DEMO_MODE } from "@/lib/constants";
 import { cn, formatINR } from "@/lib/utils";
 import type { Species } from "@/lib/types";
 
+interface CashfreeCheckout {
+  checkout: (opts: { paymentSessionId: string; redirectTarget?: string }) => Promise<void>;
+}
+declare global {
+  interface Window {
+    Cashfree?: (opts: { mode: "sandbox" | "production" }) => CashfreeCheckout;
+  }
+}
+
 const STEP_LABELS = ["Choose tree", "Choose location", "Plant / Sponsor"];
 
-export function PlantWizard({ initialSpeciesSlug, species }: { initialSpeciesSlug?: string; species: Species[] }) {
+const CASHFREE_SDK_URL = "https://sdk.cashfree.com/js/v3/cashfree.js";
+let sdkPromise: Promise<void> | null = null;
+
+function loadCashfreeSdk(): Promise<void> {
+  if (sdkPromise) return sdkPromise;
+  sdkPromise = new Promise((resolve, reject) => {
+    if (window.Cashfree) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = CASHFREE_SDK_URL;
+    script.async = true;
+    script.onload = () => (window.Cashfree ? resolve() : reject(new Error("Cashfree SDK loaded but uninitialized.")));
+    script.onerror = () => reject(new Error("Could not load the Cashfree SDK."));
+    document.head.appendChild(script);
+  });
+  return sdkPromise;
+}
+
+export function PlantWizard({
+  initialSpeciesSlug,
+  orderId,
+  species,
+}: {
+  initialSpeciesSlug?: string;
+  orderId?: string;
+  species: Species[];
+}) {
   const router = useRouter();
   const { user, profile } = useSession();
 
@@ -26,20 +62,76 @@ export function PlantWizard({ initialSpeciesSlug, species }: { initialSpeciesSlu
   const [dedication, setDedication] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<{ treeId: string; label: string } | null>(null);
+  const [success, setSuccess] = useState<{
+    treeId: string;
+    label: string;
+    speciesName: string | null;
+    planterMyself: boolean;
+  } | null>(null);
+  const [pending, setPending] = useState<{ orderId: string; tries: number } | null>(
+    orderId ? { orderId, tries: 0 } : null
+  );
 
   const selected = species.find((s) => s.slug === selectedSlug) ?? null;
   const pricing = selected ? pricingBreakdown(selected) : null;
 
-  const availableRegions = selected
-    ? REGIONS.filter((r) => (selected.suitable_regions ?? []).includes(r.id))
-    : REGIONS;
+  const recommendedRegionIds = selected?.suitable_regions ?? [];
+  const availableRegions = [
+    ...REGIONS.filter((r) => recommendedRegionIds.includes(r.id)),
+    ...REGIONS.filter((r) => !recommendedRegionIds.includes(r.id)),
+  ];
 
   function pickSpecies(s: Species) {
     setSelectedSlug(s.slug);
     const first = s.suitable_regions?.[0];
     if (first) setRegion(first);
   }
+
+  /* -------- order status polling (after returning from checkout) -------- */
+  useEffect(() => {
+    if (!pending) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/cashfree/status?orderId=${encodeURIComponent(pending.orderId)}`);
+        if (res.status === 401) {
+          router.push(`/login?next=%2Fplant%3Forder%3D${pending.orderId}`);
+          return;
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.status === "completed" && data.treeId) {
+          setSuccess({
+            treeId: data.treeId,
+            label: data.meta?.region ?? "",
+            speciesName: data.meta?.species_name ?? null,
+            planterMyself: Boolean(data.meta?.planter_myself),
+          });
+          setPending(null);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          return;
+        }
+        if (data.status === "failed") {
+          setError(
+            "Your payment did not complete, or the order expired. No charge was made — please try again."
+          );
+          setPending(null);
+          return;
+        }
+      } catch {
+        // keep polling
+      }
+      if (cancelled) return;
+      setPending((p) => (p && p.tries < 40 ? { ...p, tries: p.tries + 1 } : null));
+    };
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending?.orderId]);
 
   async function confirm() {
     if (!selected || !user) {
@@ -53,22 +145,66 @@ export function PlantWizard({ initialSpeciesSlug, species }: { initialSpeciesSlu
     setBusy(true);
     setError(null);
     try {
-      const supabase = createClient();
-      await new Promise((r) => setTimeout(r, 900)); // realistic demo checkout feel
-      const result = await plantTree(supabase, {
-        species: selected,
-        region,
-        customName,
-        dedication,
-        planterMyself: mode === "myself",
+      const res = await fetch("/api/cashfree/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          speciesSlug: selected.slug,
+          region,
+          mode,
+          customName,
+          dedication,
+        }),
       });
-      setSuccess(result);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error ?? "Could not start the checkout.");
+      }
+      if (data.demo || !data.paymentSessionId) {
+        // Demo mode — payment already settled server-side; poll for the tree.
+        setPending({ orderId: data.orderId, tries: 0 });
+      } else {
+        await openCashfreeCheckout(data.paymentSessionId);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function openCashfreeCheckout(paymentSessionId: string) {
+    await loadCashfreeSdk();
+    if (!window.Cashfree) {
+      throw new Error("Could not load the payment provider.");
+    }
+    const cashfree = window.Cashfree({ mode: cashfreeMode() });
+    try {
+      await cashfree.checkout({ paymentSessionId, redirectTarget: "_self" });
+    } catch {
+      // User closed/cancelled the checkout window.
+      setError("Payment was cancelled — no charge was made. You can try again.");
+    }
+  }
+
+  function cashfreeMode(): "sandbox" | "production" {
+    return process.env.NEXT_PUBLIC_CASHFREE_ENV === "production" ? "production" : "sandbox";
+  }
+
+  /* -------- payment-confirming screen (returning from checkout) -------- */
+  if (pending) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-24 text-center">
+        <div className="mx-auto h-14 w-14 animate-spin rounded-full border-4 border-forest-200 border-t-forest-700" />
+        <h1 className="mt-8 font-display text-3xl font-bold text-forest-950">
+          Confirming your payment…
+        </h1>
+        <p className="mx-auto mt-3 max-w-md text-forest-900/60">
+          We&apos;re waiting for payment confirmation. This usually takes a few seconds — this
+          page refreshes automatically. Don&apos;t close this tab.
+        </p>
+      </div>
+    );
   }
 
   /* ---------------- SUCCESS --------------- */
@@ -82,7 +218,8 @@ export function PlantWizard({ initialSpeciesSlug, species }: { initialSpeciesSlu
           Your tree is ready
         </h1>
         <p className="mt-3 text-lg text-forest-900/70">
-          {selected?.name} · {regionById(region)?.label} · {success.label}
+          {success.speciesName} · {regionById(success.label)?.label ?? success.label} ·{" "}
+          {success.planterMyself ? "planted by you" : "sponsored by you"}
         </p>
 
         <div className="mx-auto mt-8 max-w-md rounded-3xl border border-forest-900/10 bg-cream-50 p-8 shadow-lift">
@@ -93,16 +230,16 @@ export function PlantWizard({ initialSpeciesSlug, species }: { initialSpeciesSlu
             {success.treeId}
           </p>
           <p className="mt-3 text-sm text-forest-900/60">
-            {mode === "sponsor" ? (
-              <>
-                This tree is now <strong>funded 🟡</strong>. A verified planter in your
-                chosen region can accept the mission — you&apos;ll get proof when it&apos;s
-                planted.
-              </>
-            ) : (
+            {success.planterMyself ? (
               <>
                 You&apos;re the planter for this tree (🔵 accepted). Complete your mission
                 and upload proof to get it verified.
+              </>
+            ) : (
+              <>
+                This tree is now <strong>funded 🟡</strong>. A planter in your
+                chosen region can accept the mission — you&apos;ll get proof when it&apos;s
+                planted.
               </>
             )}
           </p>
@@ -118,7 +255,9 @@ export function PlantWizard({ initialSpeciesSlug, species }: { initialSpeciesSlu
             </Link>
           </div>
           <p className="mt-6 border-t border-forest-900/10 pt-4 text-[11px] text-forest-900/40">
-            Demo mode — no real money was moved. This is a demo payment record.
+            {DEMO_MODE
+              ? "Demo payment — nothing was charged."
+              : "Payment secured via Cashfree — cards, UPI, netbanking & wallets."}
           </p>
         </div>
 
@@ -245,28 +384,40 @@ export function PlantWizard({ initialSpeciesSlug, species }: { initialSpeciesSlu
               Choose planting region
             </h1>
             <p className="mt-3 text-forest-900/60">
-              {selected.name} grows best in these supported regions.
+              Any region works — {selected.name} grows best in the highlighted ones, but you
+              can plant it anywhere.
             </p>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {availableRegions.map((r) => (
-                <button
-                  key={r.id}
-                  onClick={() => setRegion(r.id)}
-                  className={cn(
-                    "rounded-2xl border-2 p-4 text-left transition-all",
-                    region === r.id
-                      ? "border-forest-600 bg-forest-50"
-                      : "border-forest-900/10 bg-cream-50 hover:border-forest-300"
-                  )}
-                >
-                  <span className="text-lg" aria-hidden>
-                    📍
-                  </span>
-                  <div className="mt-1 font-semibold text-forest-950">{r.label}</div>
-                  <div className="text-sm text-forest-900/50">{r.state}</div>
-                </button>
-              ))}
+              {availableRegions.map((r) => {
+                const recommended = recommendedRegionIds.includes(r.id);
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => setRegion(r.id)}
+                    className={cn(
+                      "rounded-2xl border-2 p-4 text-left transition-all",
+                      region === r.id
+                        ? "border-forest-600 bg-forest-50"
+                        : "border-forest-900/10 bg-cream-50 hover:border-forest-300"
+                    )}
+                  >
+                    <span className="text-lg" aria-hidden>
+                      📍
+                    </span>
+                    <div className="mt-1 font-semibold text-forest-950">{r.label}</div>
+                    <div className="text-sm text-forest-900/50">{r.state}</div>
+                    <div
+                      className={cn(
+                        "mt-1 text-[11px] font-semibold uppercase tracking-wide",
+                        recommended ? "text-forest-600" : "text-forest-900/40"
+                      )}
+                    >
+                      {recommended ? "✓ Recommended" : "Also available"}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="mt-10">
@@ -374,8 +525,13 @@ export function PlantWizard({ initialSpeciesSlug, species }: { initialSpeciesSlu
               </dl>
 
               <div className="mt-3 rounded-2xl bg-forest-950 px-4 py-3 text-xs text-cream-200/80">
-                💳 <strong>Demo payment.</strong> No real money moves in this MVP. Fees are
-                configurable by admins.
+                {DEMO_MODE ? (
+                  <>🎬 <strong>Demo mode.</strong> This completes instantly — no payment is taken.</>
+                ) : (
+                  <>🔒 <strong>Secure payment.</strong> You&apos;ll be taken to a Cashfree checkout
+                  to pay (cards, UPI, netbanking &amp; wallets). No charge is made until you
+                  confirm.</>
+                )}
               </div>
 
               {error && (
