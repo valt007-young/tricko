@@ -7,7 +7,7 @@
 //
 //   npm run seed:demo
 //
-// Uses the service role key â€” never use this in the browser.
+// Uses the service role key — never use this in the browser.
 
 import { createClient } from "@supabase/supabase-js";
 import { readFileSync, existsSync } from "node:fs";
@@ -45,12 +45,12 @@ const REGIONS = {
   mysore: { label: "Mysuru", state: "Karnataka", lat: 12.2958, lng: 76.6394 },
 };
 const SPECIES = [
-  { slug: "neem", name: "Neem", scientific_name: "Azadirachta indica", emoji: "ðŸŒ³", planting_cost: 800, verification_fee: 100, planter_payout: 700, suitable_regions: ["madurai", "coimbatore", "bangalore", "ahmedabad", "jaipur", "delhi"] },
-  { slug: "mango", name: "Mango", scientific_name: "Mangifera indica", emoji: "ðŸ¥­", planting_cost: 900, verification_fee: 100, planter_payout: 800, suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "pune"] },
-  { slug: "banyan", name: "Banyan", scientific_name: "Ficus benghalensis", emoji: "ðŸŒ³", planting_cost: 850, verification_fee: 100, planter_payout: 750, suitable_regions: ["madurai", "bangalore", "kerala", "delhi", "nagpur", "ahmedabad"] },
-  { slug: "peepal", name: "Peepal", scientific_name: "Ficus religiosa", emoji: "ðŸŒ³", planting_cost: 780, verification_fee: 100, planter_payout: 680, suitable_regions: ["madurai", "jaipur", "delhi", "mysore", "pune", "kerala"] },
-  { slug: "sheesham", name: "Indian Rosewood (Sheesham)", scientific_name: "Dalbergia sissoo", emoji: "ðŸŒ²", planting_cost: 820, verification_fee: 100, planter_payout: 720, suitable_regions: ["delhi", "jaipur", "nagpur", "pune", "bangalore"] },
-  { slug: "golden-shower", name: "Golden Shower (Amaltas)", scientific_name: "Cassia fistula", emoji: "ðŸŒ¼", planting_cost: 760, verification_fee: 100, planter_payout: 660, suitable_regions: ["madurai", "coimbatore", "ahmedabad", "jaipur", "kerala"] },
+  { slug: "neem", name: "Neem", scientific_name: "Azadirachta indica", emoji: "🌳", planting_cost: 800, verification_fee: 100, planter_payout: 700, suitable_regions: ["madurai", "coimbatore", "bangalore", "ahmedabad", "jaipur", "delhi"] },
+  { slug: "mango", name: "Mango", scientific_name: "Mangifera indica", emoji: "🥭", planting_cost: 900, verification_fee: 100, planter_payout: 800, suitable_regions: ["madurai", "coimbatore", "bangalore", "mysore", "kerala", "pune"] },
+  { slug: "banyan", name: "Banyan", scientific_name: "Ficus benghalensis", emoji: "🌳", planting_cost: 850, verification_fee: 100, planter_payout: 750, suitable_regions: ["madurai", "bangalore", "kerala", "delhi", "nagpur", "ahmedabad"] },
+  { slug: "peepal", name: "Peepal", scientific_name: "Ficus religiosa", emoji: "🌳", planting_cost: 780, verification_fee: 100, planter_payout: 680, suitable_regions: ["madurai", "jaipur", "delhi", "mysore", "pune", "kerala"] },
+  { slug: "sheesham", name: "Indian Rosewood (Sheesham)", scientific_name: "Dalbergia sissoo", emoji: "🌲", planting_cost: 820, verification_fee: 100, planter_payout: 720, suitable_regions: ["delhi", "jaipur", "nagpur", "pune", "bangalore"] },
+  { slug: "golden-shower", name: "Golden Shower (Amaltas)", scientific_name: "Cassia fistula", emoji: "🌼", planting_cost: 760, verification_fee: 100, planter_payout: 660, suitable_regions: ["madurai", "coimbatore", "ahmedabad", "jaipur", "kerala"] },
 ];
 const IMAGES = {
   neem: "https://images.pexels.com/photos/5060587/pexels-photo-5060587.jpeg?auto=compress&cs=tinysrgb&w=1200",
@@ -62,10 +62,10 @@ const IMAGES = {
 };
 
 function ok(marker, msg) {
-  console.log(`  âœ“ ${marker}: ${msg}`);
+  console.log(`  ✓ ${marker}: ${msg}`);
 }
 function fail(marker, msg) {
-  console.error(`  âœ— ${marker}: ${msg}`);
+  console.error(`  ✗ ${marker}: ${msg}`);
 }
 
 async function ensureUser({ email, name, role, region, verified }) {
@@ -79,7 +79,7 @@ async function ensureUser({ email, name, role, region, verified }) {
       email_confirm: true,
       user_metadata: { full_name: name, role },
     });
-    if (error) return fail("user", email + " â†’ " + error.message);
+    if (error) return fail("user", email + " → " + error.message);
     id = data.user.id;
   }
   const profile = {
@@ -93,7 +93,7 @@ async function ensureUser({ email, name, role, region, verified }) {
     onboarding_done: true,
   };
   const { error } = await supabase.from("profiles").upsert(profile, { onConflict: "id" });
-  if (error) return fail("profile", email + " â†’ " + error.message);
+  if (error) return fail("profile", email + " → " + error.message);
   return id;
 }
 
@@ -111,7 +111,7 @@ async function seed() {
   const planterId = await ensureUser({ email: "planter@triko.com", name: "Ravi", role: "planter", region: "madurai", verified: true });
   const adminId = await ensureUser({ email: "admin@triko.com", name: "TRIKO Admin", role: "admin" });
   if (!sponsorId || !planterId || !adminId) {
-    console.error("Aborting â€” could not create demo users.");
+    console.error("Aborting — could not create demo users.");
     process.exit(1);
   }
   ok("sponsor", "sponsor@triko.com");
@@ -121,10 +121,10 @@ async function seed() {
   console.log("\n2. Species catalog");
   for (const s of SPECIES) {
     const { error } = await supabase.from("tree_species").upsert(
-      { ...s, description: s.name + " â€” native and region-appropriate.", image_url: IMAGES[s.slug === "golden-shower" ? "cassia" : s.slug], native_to: "India", care_notes: "Water young trees weekly in the first season.", availability: true },
+      { ...s, description: s.name + " — native and region-appropriate.", image_url: IMAGES[s.slug === "golden-shower" ? "cassia" : s.slug], native_to: "India", care_notes: "Water young trees weekly in the first season.", availability: true },
       { onConflict: "slug" }
     );
-    if (error) return fail("species", s.slug + " â†’ " + error.message);
+    if (error) return fail("species", s.slug + " → " + error.message);
   }
   ok("species", SPECIES.length + " species upserted");
 
@@ -149,7 +149,7 @@ async function seed() {
         custom_name: customName,
         dedication,
         region,
-        location_label: `${r.label}, ${r.state} Â· community garden`,
+        location_label: `${r.label}, ${r.state} · community garden`,
         lat: r.lat + (Math.random() - 0.5) * 0.06,
         lng: r.lng + (Math.random() - 0.5) * 0.06,
         planted_at: new Date(plantedAt).toISOString(),
@@ -169,7 +169,7 @@ async function seed() {
       payout: species.planter_payout,
       status: "verified",
       deadline: new Date(plantedAt + 2 * day).toISOString(),
-      estimated_time: "1â€“2 hours",
+      estimated_time: "1–2 hours",
       created_at: new Date(plantedAt - 2 * day).toISOString(),
     });
 
@@ -191,7 +191,7 @@ async function seed() {
       user_id: sponsorId,
       tree_id: tree.id,
       amount: species.planting_cost + species.verification_fee,
-      description: `${species.name} Â· ${r.label} Â· demo payment`,
+      description: `${species.name} · ${r.label} · demo payment`,
       status: "succeeded",
       provider: "demo",
       provider_txn_id: "DEMO-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
@@ -216,7 +216,7 @@ async function seed() {
     if (i === 0) {
       // growth timeline for the flagship tree
       const flags = [
-        { day_label: "Day 0", notes: "Planted â€” sapling in the ground.", status: "Planted", date: s.plantedAt },
+        { day_label: "Day 0", notes: "Planted — sapling in the ground.", status: "Planted", date: s.plantedAt },
         { day_label: "Day 30", notes: "First growth update: new leaves appearing.", status: "Growing", date: s.plantedAt + 30 * day },
         { day_label: "Day 90", notes: "Maintenance visit: watered and weeded.", status: "Healthy", date: s.plantedAt + 90 * day },
       ];
@@ -256,14 +256,14 @@ async function seed() {
       payout: species.planter_payout,
       status: "funded",
       deadline: new Date(now + 2 * day).toISOString(),
-      estimated_time: "1â€“2 hours",
+      estimated_time: "1–2 hours",
       created_at: new Date(now - 1 * day).toISOString(),
     });
     await supabase.from("payments").insert({
       user_id: sponsorId,
       tree_id: tree.id,
       amount: species.planting_cost + species.verification_fee,
-      description: `${species.name} Â· Madurai Â· demo payment`,
+      description: `${species.name} · Madurai · demo payment`,
       status: "succeeded",
       provider: "demo",
       provider_txn_id: "DEMO-" + Math.random().toString(36).slice(2, 10).toUpperCase(),
@@ -303,7 +303,7 @@ async function seed() {
       payout: species.planter_payout,
       status: "awaiting_verification",
       deadline: new Date(now + 1 * day).toISOString(),
-      estimated_time: "1â€“2 hours",
+      estimated_time: "1–2 hours",
       created_at: new Date(now - 3 * day).toISOString(),
     });
     await supabase.from("proof").insert({
@@ -347,7 +347,7 @@ async function seed() {
       payout: species.planter_payout,
       status: "awaiting_verification",
       deadline: new Date(now + 2 * day).toISOString(),
-      estimated_time: "1â€“2 hours",
+      estimated_time: "1–2 hours",
       created_at: new Date(now - 2 * day).toISOString(),
     });
     await supabase.from("proof").insert({
@@ -376,16 +376,16 @@ async function seed() {
   ok("achievements", "4 achievement rows");
 
   const activities = [
-    { user_id: planterId, type: "verified", message: "ðŸŒ³ Tree TC-2026-IN-000482 was verified", meta: { tree_id: "TC-2026-IN-000482" } },
-    { user_id: sponsorId, type: "mission", message: "ðŸŒ± You sponsored a Neem tree in Madurai", meta: {} },
+    { user_id: planterId, type: "verified", message: "🌳 Tree TC-2026-IN-000482 was verified", meta: { tree_id: "TC-2026-IN-000482" } },
+    { user_id: sponsorId, type: "mission", message: "🌱 You sponsored a Neem tree in Madurai", meta: {} },
   ];
   await supabase.from("activity").insert(activities);
   ok("activity", "2 activity rows");
 
   console.log("\nDone. Sign in with:");
-  console.log("  sponsor@triko.com   / demo1234   (Sponsor â€” My Forest, Plant a Tree)");
-  console.log("  planter@triko.com    / demo1234   (Planter â€” Missions, My Missions, Earnings)");
-  console.log("  admin@triko.com      / demo1234   (Admin â€” verification queue)");
+  console.log("  sponsor@triko.com   / demo1234   (Sponsor — My Forest, Plant a Tree)");
+  console.log("  planter@triko.com    / demo1234   (Planter — Missions, My Missions, Earnings)");
+  console.log("  admin@triko.com      / demo1234   (Admin — verification queue)");
   console.log("");
 }
 
